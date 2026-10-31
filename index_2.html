@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Drop to Drive</title>
+<meta name="theme-color" content="#0f766e">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%230f766e'/><path d='M32 14v26M20 29l12 12 12-12M18 50h28' stroke='white' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<style>
+:root{
+  --bg:#f5f7f6; --card:#ffffff; --ink:#1b201e; --muted:#5d6a65; --line:#e1e6e3;
+  --accent:#0f766e; --accent-ink:#ffffff; --accent-soft:#e2f3ef; --danger:#b42318;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 6px 20px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1312; --card:#181e1c; --ink:#e7ecea; --muted:#98a59f; --line:#28302d;
+    --accent:#2dd4bf; --accent-ink:#04201c; --accent-soft:#14322d; --danger:#f97066;
+    --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 80px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.logo{width:38px;height:38px;border-radius:11px;background:var(--accent);display:grid;place-items:center;flex:none}
+.logo svg{width:20px;height:20px}
+h1{font-size:19px;margin:0;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13px;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:14px;padding:8px 14px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none;white-space:nowrap;line-height:1.3}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.small{padding:5px 10px;font-size:13px;border-radius:8px}
+.btn.danger{color:var(--danger)}
+.btn:disabled{opacity:.5;cursor:default}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.panel{padding:24px 20px}
+.panel h2{margin:0 0 6px;font-size:18px}
+.panel p{margin:0 0 14px;color:var(--muted)}
+.panel ol{margin:0 0 16px;padding-left:20px;color:var(--muted)}
+.panel ol li{margin-bottom:4px}
+code{background:var(--accent-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:13px;word-break:break-all}
+input[type=text],input[type=search]{font:inherit;font-size:14px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;width:100%;min-width:0}
+input:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row input{flex:1 1 220px}
+.drop{display:block;padding:38px 20px;text-align:center;border:2px dashed var(--line);border-radius:16px;background:var(--card);cursor:pointer;transition:border-color .15s,background .15s}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop svg{width:40px;height:40px;color:var(--accent)}
+.drop strong{display:block;font-size:17px;margin:8px 0 2px}
+.drop span{color:var(--muted);font-size:13px}
+.uploads{margin-top:12px}
+.up{padding:10px 14px;border-top:1px solid var(--line)}
+.up:first-child{border-top:0}
+.up-top{display:flex;justify-content:space-between;gap:10px;font-size:14px}
+.up-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.up-state{color:var(--muted);flex:none;font-size:13px}
+.up.err .up-state{color:var(--danger)}
+.track{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:6px}
+.track i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.list-head{display:flex;align-items:center;gap:8px;margin:28px 0 10px;flex-wrap:wrap}
+.list-head h2{font-size:15px;margin:0;flex:1 1 auto}
+.list-head .count{color:var(--muted);font-weight:400}
+.search{margin-bottom:10px}
+.file{display:grid;grid-template-columns:52px 1fr;gap:2px 12px;padding:12px 14px;border-top:1px solid var(--line);align-items:center}
+.file:first-child{border-top:0}
+.thumb{grid-row:span 2;width:52px;height:52px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:11px;font-weight:700;overflow:hidden;letter-spacing:.03em}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.info{min-width:0}
+.fname{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fmeta{color:var(--muted);font-size:12.5px}
+.badge{display:inline-block;font-size:11px;padding:0 7px;border-radius:99px;background:var(--accent-soft);color:var(--accent);margin-left:6px;font-weight:600}
+.factions{grid-column:2;display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.empty{padding:28px 20px;text-align:center;color:var(--muted)}
+.overlay{position:fixed;inset:0;background:rgba(15,118,110,.18);backdrop-filter:blur(2px);display:none;place-items:center;z-index:50;pointer-events:none}
+.overlay.show{display:grid}
+.overlay div{background:var(--card);border:2px dashed var(--accent);color:var(--ink);padding:28px 36px;border-radius:18px;font-size:18px;font-weight:600}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;max-width:calc(100% - 32px);opacity:0;transition:.2s;z-index:60;pointer-events:none;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+dialog{border:1px solid var(--line);border-radius:18px;background:var(--card);color:var(--ink);padding:22px;max-width:min(340px,calc(100% - 32px));text-align:center}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog h3{margin:0 0 4px}
+dialog p{margin:0 0 14px;color:var(--muted);font-size:13px}
+#qr{display:inline-block;padding:10px;background:#fff;border-radius:12px;margin-bottom:12px}
+#qr img,#qr canvas{display:block}
+.url{font-size:12px;color:var(--muted);word-break:break-all;margin-bottom:14px}
+.link{background:none;border:0;color:var(--accent);font:inherit;font-size:13px;cursor:pointer;padding:0;text-decoration:underline}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></div>
+      <div style="min-width:0">
+        <h1>Drop to Drive</h1>
+        <p class="sub" id="who">Send files from any device to your Google Drive</p>
+      </div>
+    </div>
+    <div class="actions" id="headerActions" hidden>
+      <button class="btn" id="phoneBtn" type="button">Open on phone</button>
+      <button class="btn" id="signOutBtn" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <!-- First-time setup (only shows if no Client ID is set) -->
+  <section id="setup" class="card panel" hidden>
+    <h2>One-time setup</h2>
+    <p>This page needs a Google "Client ID" so it can save files to your Drive. The README file has the full steps.</p>
+    <ol>
+      <li>In Google Cloud, add this address as an "Authorized JavaScript origin":<br><code id="siteOrigin"></code></li>
+      <li>Copy the Client ID Google gives you and paste it below.</li>
+    </ol>
+    <div class="row">
+      <input type="text" id="clientIdInput" placeholder="xxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false">
+      <button class="btn primary" id="saveClientId" type="button">Save</button>
+    </div>
+    <p style="margin:12px 0 0;font-size:13px">Tip: if you paste it into <code>index.html</code> instead, your phone won't need this step.</p>
+  </section>
+
+  <!-- Signed out -->
+  <section id="signedOut" class="card panel" hidden>
+    <h2>Sign in to your Google account</h2>
+    <p id="signedOutMsg">Files you drop here are saved in a folder in your Google Drive. Open this same page on your phone and sign in with the same account to see them.</p>
+    <button class="btn primary" id="signInBtn" type="button">Sign in with Google</button>
+    <p style="margin:14px 0 0"><button class="link" id="resetClientId" type="button" hidden>Use a different Client ID</button></p>
+  </section>
+
+  <!-- Main app -->
+  <main id="app" hidden>
+    <label class="drop" id="dropZone" for="fileInput">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+      <strong>Drop files here</strong>
+      <span>or tap to choose · you can also paste (Ctrl+V) a screenshot</span>
+      <input type="file" id="fileInput" multiple hidden>
+    </label>
+    <div class="card uploads" id="uploads" hidden></div>
+
+    <div class="list-head">
+      <h2>Your files <span class="count" id="count"></span></h2>
+      <button class="btn small" id="refreshBtn" type="button" aria-label="Refresh">
+        <svg id="refreshIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+        Refresh
+      </button>
+      <a class="btn small" id="driveLink" href="https://drive.google.com" target="_blank" rel="noopener">Open in Drive</a>
+    </div>
+    <div class="search" id="searchWrap" hidden><input type="search" id="search" placeholder="Search files"></div>
+    <div class="card" id="files"><div class="empty">Loading…</div></div>
+  </main>
+</div>
+
+<div class="overlay" id="overlay"><div>Drop to upload</div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<dialog id="qrDialog">
+  <h3>Open on your phone</h3>
+  <p>Scan with your phone camera, then sign in with the same Google account.</p>
+  <div id="qr"></div>
+  <div class="url" id="qrUrl"></div>
+  <div class="row" style="justify-content:center">
+    <button class="btn" id="copyUrl" type="button">Copy link</button>
+    <button class="btn primary" id="closeQr" type="button">Done</button>
+  </div>
+</dialog>
+
+<script>
+/* ============================================================
+   SETTINGS — the only part you need to edit
+   ============================================================ */
+const CONFIG = {
+  // Paste your Google OAuth Client ID between the quotes:
+  CLIENT_ID: "",
+  // Name of the folder in your Google Drive where files are saved:
+  FOLDER_NAME: "Drop to Drive",
+  // How often (in seconds) the file list refreshes by itself:
+  AUTO_REFRESH_SECONDS: 20
+};
+/* ============================================================ */
+
+(function () {
+  "use strict";
+
+  const SCOPE = "https://www.googleapis.com/auth/drive.file";
+  const API = "https://www.googleapis.com/drive/v3";
+  const UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files";
+  const K = { client: "dtd_client_id", token: "dtd_token", folder: "dtd_folder" };
+
+  const $ = (id) => document.getElementById(id);
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+    del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+  };
+
+  let tokenClient = null;
+  let accessToken = null;
+  let tokenExpiry = 0;
+  let expiryTimer = null;
+  let folderId = null;
+  let allFiles = [];
+  let refreshing = false;
+  let uploading = false;
+  let pollTimer = null;
+  const queue = [];
+
+  /* ---------- small helpers ---------- */
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  let toastTimer;
+  function toast(msg, ms) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), ms || 3200);
+  }
+  function fmtSize(n) {
+    if (n == null || n === "") return "";
+    n = Number(n);
+    const u = ["B", "KB", "MB", "GB", "TB"];
+    let i = 0;
+    while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+    return (i ? n.toFixed(n < 10 ? 1 : 0) : n) + " " + u[i];
+  }
+  function ago(iso) {
+    const s = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (s < 60) return "just now";
+    if (s < 3600) return Math.floor(s / 60) + " min ago";
+    if (s < 86400) return Math.floor(s / 3600) + " hr ago";
+    const d = Math.floor(s / 86400);
+    if (d === 1) return "yesterday";
+    if (d < 7) return d + " days ago";
+    return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  }
+  function extLabel(f) {
+    const m = /\.([a-z0-9]{1,5})$/i.exec(f.name || "");
+    return m ? m[1].toUpperCase() : "FILE";
+  }
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch (e) {
+      const ta = el("textarea");
+      ta.value = text;
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand("copy"); } catch (e2) {}
+      ta.remove();
+      return ok;
+    }
+  }
+  function pageUrl() { return location.href.split("#")[0]; }
+
+  /* ---------- views ---------- */
+  function show(view) {
+    ["setup", "signedOut", "app"].forEach((v) => { $(v).hidden = v !== view; });
+    $("headerActions").hidden = view !== "app";
+  }
+
+  /* ---------- Client ID / setup ---------- */
+  function clientId() {
+    return (CONFIG.CLIENT_ID || "").trim() || store.get(K.client) || "";
+  }
+  $("siteOrigin").textContent = location.origin;
+  $("saveClientId").addEventListener("click", () => {
+    const v = $("clientIdInput").value.trim();
+    if (!/\.apps\.googleusercontent\.com$/.test(v)) {
+      toast("That doesn't look like a Client ID. It should end with .apps.googleusercontent.com");
+      return;
+    }
+    store.set(K.client, v);
+    tokenClient = null;
+    start();
+  });
+  $("resetClientId").addEventListener("click", () => {
+    store.del(K.client);
+    store.del(K.token);
+    tokenClient = null;
+    show("setup");
+  });
+
+  /* ---------- Google sign-in ---------- */
+  function start() {
+    const id = clientId();
+    if (!id) { show("setup"); return; }
+    $("resetClientId").hidden = !!(CONFIG.CLIENT_ID || "").trim();
+
+    const saved = (() => { try { return JSON.parse(store.get(K.token) || "null"); } catch (e) { return null; } })();
+    if (saved && saved.e > Date.now() + 30000) {
+      setToken(saved.t, saved.e);
+    } else {
+      store.del(K.token);
+      show("signedOut");
+    }
+    waitForGoogle(id, Date.now());
+  }
+
+  function waitForGoogle(id, startedAt) {
+    if (window.google && google.accounts && google.accounts.oauth2) {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: id,
+        scope: SCOPE,
+        callback: (resp) => {
+          if (resp.error) { toast("Sign-in didn't complete: " + resp.error); return; }
+          setToken(resp.access_token, Date.now() + (Number(resp.expires_in || 3600) - 60) * 1000);
+        },
+        error_callback: (err) => {
+          if (err && err.type === "popup_failed_to_open") toast("Your browser blocked the sign-in pop-up. Please allow pop-ups for this site.", 5000);
+          else if (err && err.type === "popup_closed") toast("Sign-in window was closed.");
+          else toast("Sign-in problem. Please try again.");
+        }
+      });
+      return;
+    }
+    if (Date.now() - startedAt > 12000) {
+      $("signedOutMsg").textContent = "Couldn't load Google sign-in. Check your internet connection, or Google may be blocked on this network.";
+      return;
+    }
+    setTimeout(() => waitForGoogle(id, startedAt), 200);
+  }
+
+  function setToken(token, expiry) {
+    accessToken = token;
+    tokenExpiry = expiry;
+    store.set(K.token, JSON.stringify({ t: token, e: expiry }));
+    clearTimeout(expiryTimer);
+    expiryTimer = setTimeout(() => endSession("Your sign-in has timed out (Google allows about an hour). Please sign in again."), Math.max(0, expiry - Date.now()));
+    onSignedIn();
+  }
+
+  function endSession(msg) {
+    accessToken = null;
+    tokenExpiry = 0;
+    store.del(K.token);
+    clearTimeout(expiryTimer);
+    stopPoll();
+    show("signedOut");
+    if (msg) $("signedOutMsg").textContent = msg;
+  }
+
+  $("signInBtn").addEventListener("click", () => {
+    if (!tokenClient) { toast("Still loading Google sign-in. Try again in a second."); return; }
+    tokenClient.requestAccessToken();
+  });
+
+  $("signOutBtn").addEventListener("click", () => {
+    const t = accessToken;
+    if (t && window.google && google.accounts && google.accounts.oauth2) {
+      try { google.accounts.oauth2.revoke(t, () => {}); } catch (e) {}
+    }
+    folderId = null;
+    store.del(K.folder);
+    allFiles = [];
+    $("who").textContent = "Send files from any device to your Google Drive";
+    endSession("You're signed out.");
+  });
+
+  function onSignedIn() {
+    show("app");
+    loadWho();
+    refresh(false);
+    startPoll();
+  }
+
+  /* ---------- Drive API ---------- */
+  function ensureToken() {
+    if (!accessToken || Date.now() > tokenExpiry) {
+      endSession("Your sign-in has timed out. Please sign in again.");
+      const e = new Error("Please sign in again");
+      e.expired = true;
+      throw e;
+    }
+  }
+  async function readError(res) {
+    try {
+      const j = await res.json();
+      return (j.error && j.error.message) || res.statusText;
+    } catch (e) { return res.statusText || ("Error " + res.status); }
+  }
+  async function api(path, opts) {
+    ensureToken();
+    opts = opts || {};
+    const headers = Object.assign({ Authorization: "Bearer " + accessToken }, opts.headers || {});
+    const res = await fetch(path.indexOf("http") === 0 ? path : API + path, Object.assign({}, opts, { headers }));
+    if (res.status === 401) {
+      endSession("Your sign-in has timed out. Please sign in again.");
+      const e = new Error("Please sign in again"); e.expired = true; throw e;
+    }
+    if (!res.ok) throw new Error(await readError(res));
+    if (res.status === 204) return null;
+    const txt = await res.text();
+    return txt ? JSON.parse(txt) : null;
+  }
+
+  async function loadWho() {
+    try {
+      const r = await api("/about?fields=user(displayName,emailAddress)");
+      if (r && r.user) $("who").textContent = "Signed in as " + (r.user.emailAddress || r.user.displayName);
+    } catch (e) {}
+  }
+
+  async function ensureFolder() {
+    if (folderId) return folderId;
+    const cached = store.get(K.folder);
+    if (cached) {
+      try {
+        const f = await api("/files/" + encodeURIComponent(cached) + "?fields=id,trashed");
+        if (f && !f.trashed) { folderId = cached; return folderId; }
+      } catch (e) { if (e.expired) throw e; }
+    }
+    const name = CONFIG.FOLDER_NAME.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    const q = encodeURIComponent("name='" + name + "' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+    const r = await api("/files?q=" + q + "&fields=files(id)&spaces=drive");
+    if (r && r.files && r.files.length) {
+      folderId = r.files[0].id;
+    } else {
+      const f = await api("/files?fields=id", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: CONFIG.FOLDER_NAME, mimeType: "application/vnd.google-apps.folder" })
+      });
+      folderId = f.id;
+    }
+    store.set(K.folder, folderId);
+    return folderId;
+  }
+
+  async function uploadFile(file, onProgress) {
+    ensureToken();
+    const parent = await ensureFolder();
+    const type = file.type || "application/octet-stream";
+    const init = await fetch(UPLOAD_URL + "?uploadType=resumable&fields=id", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + accessToken,
+        "Content-Type": "application/json; charset=UTF-8",
+        "X-Upload-Content-Type": type
+      },
+      body: JSON.stringify({ name: file.name || "pasted-file", parents: [parent] })
+    });
+    if (init.status === 401) {
+      endSession("Your sign-in has timed out. Please sign in again.");
+      const e = new Error("Please sign in again"); e.expired = true; throw e;
+    }
+    if (!init.ok) throw new Error(await readError(init));
+    const sessionUrl = init.headers.get("Location");
+    if (!sessionUrl) throw new Error("Google didn't return an upload link");
+
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", sessionUrl);
+      xhr.setRequestHeader("Content-Type", type);
+      xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          onProgress(1);
+          try { resolve(JSON.parse(xhr.responseText)); } catch (e) { resolve({}); }
+        } else {
+          let msg = "Upload failed (" + xhr.status + ")";
+          try { const j = JSON.parse(xhr.responseText); if (j.error && j.error.message) msg = j.error.message; } catch (e) {}
+          reject(new Error(msg));
+        }
+      };
+      xhr.onerror = () => reject(new Error("Network problem — check your connection"));
+      xhr.send(file);
+    });
+  }
+
+  /* ---------- upload queue + UI ---------- */
+  function uploadRow(file) {
+    const box = $("uploads");
+    box.hidden = false;
+    const row = el("div", "up");
+    const top = el("div", "up-top");
+    const name = el("div", "up-name", file.name || "Pasted file");
+    const state = el("div", "up-state", "Waiting · " + fmtSize(file.size));
+    top.append(name, state);
+    const track = el("div", "track");
+    const fill = el("i");
+    track.appendChild(fill);
+    row.append(top, track);
+    box.appendChild(row);
+    function removeLater() {
+      setTimeout(() => {
+        row.remove();
+        if (!box.children.length) box.hidden = true;
+      }, 4000);
+    }
+    return {
+      progress(p) {
+        fill.style.width = Math.round(p * 100) + "%";
+        state.textContent = Math.round(p * 100) + "%";
+      },
+      done() { fill.style.width = "100%"; state.textContent = "Done ✓"; removeLater(); },
+      fail(msg) { row.classList.add("err"); state.textContent = "Failed"; name.title = msg; name.textContent = (file.name || "File") + " — " + msg; setTimeout(() => { row.remove(); if (!box.children.length) box.hidden = true; }, 12000); }
+    };
+  }
+
+  function addFiles(list) {
+    const files = Array.from(list || []).filter(Boolean);
+    if (!files.length) return;
+    if (!accessToken) { toast("Please sign in first."); return; }
+    files.forEach((f) => queue.push({ file: f, ui: uploadRow(f) }));
+    runQueue();
+  }
+
+  async function runQueue() {
+    if (uploading) return;
+    uploading = true;
+    let ok = 0;
+    while (queue.length) {
+      const item = queue.shift();
+      try {
+        await uploadFile(item.file, (p) => item.ui.progress(p));
+        item.ui.done();
+        ok++;
+      } catch (e) {
+        item.ui.fail(e.message || "Something went wrong");
+        if (e.expired) { queue.splice(0).forEach((q) => q.ui.fail("Sign in again and retry")); break; }
+      }
+    }
+    uploading = false;
+    if (ok) {
+      toast(ok === 1 ? "File uploaded to your Drive." : ok + " files uploaded to your Drive.");
+      refresh(true);
+    }
+  }
+
+  /* ---------- drag, drop, paste, pick ---------- */
+  $("fileInput").addEventListener("change", (e) => { addFiles(e.target.files); e.target.value = ""; });
+
+  const dz = $("dropZone");
+  ["dragenter", "dragover"].forEach((t) => dz.addEventListener(t, () => dz.classList.add("over")));
+  ["dragleave", "drop"].forEach((t) => dz.addEventListener(t, () => dz.classList.remove("over")));
+
+  let dragDepth = 0;
+  const hasFiles = (e) => e.dataTransfer && Array.from(e.dataTransfer.types || []).indexOf("Files") !== -1;
+  window.addEventListener("dragenter", (e) => {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    dragDepth++;
+    if (accessToken) $("overlay").classList.add("show");
+  });
+  window.addEventListener("dragover", (e) => { if (hasFiles(e)) e.preventDefault(); });
+  window.addEventListener("dragleave", () => {
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (!dragDepth) $("overlay").classList.remove("show");
+  });
+  window.addEventListener("drop", (e) => {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    dragDepth = 0;
+    $("overlay").classList.remove("show");
+    const dt = e.dataTransfer;
+    const files = [];
+    let skippedFolder = false;
+    if (dt.items && dt.items.length) {
+      Array.from(dt.items).forEach((it) => {
+        if (it.kind !== "file") return;
+        const entry = it.webkitGetAsEntry ? it.webkitGetAsEntry() : null;
+        if (entry && entry.isDirectory) { skippedFolder = true; return; }
+        const f = it.getAsFile();
+        if (f) files.push(f);
+      });
+    } else {
+      Array.from(dt.files || []).forEach((f) => files.push(f));
+    }
+    if (skippedFolder) toast("Folders can't be uploaded directly — please zip the folder first.", 4500);
+    addFiles(files);
+  });
+
+  document.addEventListener("paste", (e) => {
+    if (!accessToken || $("app").hidden) return;
+    const files = e.clipboardData && e.clipboardData.files;
+    if (!files || !files.length) return;
+    e.preventDefault();
+    const named = Array.from(files).map((f) => {
+      if (f.name && f.name !== "image.png") return f;
+      const ext = (f.type.split("/")[1] || "png").replace("jpeg", "jpg");
+      const stamp = new Date().toISOString().replace(/[:T]/g, "-").slice(0, 19);
+      return new File([f], "pasted-" + stamp + "." + ext, { type: f.type });
+    });
+    addFiles(named);
+  });
+
+  /* ---------- file list ---------- */
+  async function refresh(silent) {
+    if (refreshing || !accessToken) return;
+    refreshing = true;
+    $("refreshIcon").classList.add("spin");
+    try {
+      const parent = await ensureFolder();
+      $("driveLink").href = "https://drive.google.com/drive/folders/" + parent;
+      const q = encodeURIComponent("'" + parent + "' in parents and trashed=false");
+      const fields = encodeURIComponent("files(id,name,size,mimeType,createdTime,webViewLink,webContentLink,thumbnailLink,permissionIds)");
+      const r = await api("/files?q=" + q + "&orderBy=" + encodeURIComponent("createdTime desc") + "&pageSize=200&fields=" + fields);
+      allFiles = (r && r.files) || [];
+      render();
+    } catch (e) {
+      if (!silent && !e.expired) toast("Couldn't load your files: " + e.message, 5000);
+    } finally {
+      refreshing = false;
+      $("refreshIcon").classList.remove("spin");
+    }
+  }
+
+  function render() {
+    const box = $("files");
+    const term = $("search").value.trim().toLowerCase();
+    const list = term ? allFiles.filter((f) => (f.name || "").toLowerCase().indexOf(term) !== -1) : allFiles;
+    $("count").textContent = allFiles.length ? "(" + allFiles.length + ")" : "";
+    $("searchWrap").hidden = allFiles.length < 6;
+    box.innerHTML = "";
+    if (!allFiles.length) {
+      box.appendChild(el("div", "empty", "No files yet. Drop something above — it will show up here and on your phone."));
+      return;
+    }
+    if (!list.length) {
+      box.appendChild(el("div", "empty", "No files match your search."));
+      return;
+    }
+    list.forEach((f) => box.appendChild(fileRow(f)));
+  }
+  $("search").addEventListener("input", render);
+
+  function isPublic(f) { return (f.permissionIds || []).indexOf("anyoneWithLink") !== -1; }
+
+  function fileRow(f) {
+    const row = el("div", "file");
+
+    const thumb = el("div", "thumb");
+    if (f.thumbnailLink) {
+      const img = new Image();
+      img.alt = "";
+      img.loading = "lazy";
+      img.referrerPolicy = "no-referrer";
+      img.onerror = () => { thumb.innerHTML = ""; thumb.textContent = extLabel(f); };
+      img.src = f.thumbnailLink;
+      thumb.appendChild(img);
+    } else {
+      thumb.textContent = extLabel(f);
+    }
+
+    const info = el("div", "info");
+    const name = el("div", "fname", f.name);
+    name.title = f.name;
+    const meta = el("div", "fmeta");
+    meta.textContent = [fmtSize(f.size), ago(f.createdTime)].filter(Boolean).join(" · ");
+    if (isPublic(f)) meta.appendChild(el("span", "badge", "Shared link"));
+    info.append(name, meta);
+
+    const actions = el("div", "factions");
+
+    const open = el("a", "btn small primary", "Open");
+    open.href = f.webViewLink;
+    open.target = "_blank";
+    open.rel = "noopener";
+    actions.appendChild(open);
+
+    if (f.webContentLink) {
+      const dl = el("a", "btn small", "Download");
+      dl.href = f.webContentLink;
+      dl.target = "_blank";
+      dl.rel = "noopener";
+      actions.appendChild(dl);
+    }
+
+    const copy = el("button", "btn small", "Copy link");
+    copy.type = "button";
+    copy.addEventListener("click", async () => {
+      const ok = await copyText(f.webViewLink);
+      if (!ok) { toast("Couldn't copy. Long-press Open to copy the link."); return; }
+      toast(isPublic(f) ? "Link copied. Anyone with it can view." : "Link copied. Only you can open it (tap Share to let others view).", 4500);
+    });
+    actions.appendChild(copy);
+
+    const share = el("button", "btn small", isPublic(f) ? "Stop sharing" : "Share");
+    share.type = "button";
+    share.addEventListener("click", async () => {
+      share.disabled = true;
+      try {
+        if (isPublic(f)) {
+          await api("/files/" + f.id + "/permissions/anyoneWithLink", { method: "DELETE" });
+          toast("Link is now private again.");
+        } else {
+          await api("/files/" + f.id + "/permissions?fields=id", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ role: "reader", type: "anyone" })
+          });
+          const ok = await copyText(f.webViewLink);
+          toast(ok ? "Anyone with the link can now view. Link copied." : "Anyone with the link can now view.", 4500);
+        }
+        await refresh(true);
+      } catch (e) {
+        if (!e.expired) toast("Couldn't change sharing: " + e.message, 5000);
+        share.disabled = false;
+      }
+    });
+    actions.appendChild(share);
+
+    const del = el("button", "btn small danger", "Delete");
+    del.type = "button";
+    del.addEventListener("click", async () => {
+      if (!confirm('Move "' + f.name + '" to your Google Drive trash?')) return;
+      del.disabled = true;
+      try {
+        await api("/files/" + f.id + "?fields=id", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ trashed: true })
+        });
+        allFiles = allFiles.filter((x) => x.id !== f.id);
+        render();
+        toast("Moved to trash. You can restore it from Google Drive for 30 days.", 4500);
+      } catch (e) {
+        if (!e.expired) toast("Couldn't delete: " + e.message, 5000);
+        del.disabled = false;
+      }
+    });
+    actions.appendChild(del);
+
+    row.append(thumb, info, actions);
+    return row;
+  }
+
+  $("refreshBtn").addEventListener("click", () => refresh(false));
+
+  /* ---------- auto refresh (so files dropped on laptop appear on phone) ---------- */
+  function startPoll() {
+    stopPoll();
+    const sec = Math.max(5, Number(CONFIG.AUTO_REFRESH_SECONDS) || 20);
+    pollTimer = setInterval(() => {
+      if (document.visibilityState === "visible" && accessToken && !uploading) refresh(true);
+    }, sec * 1000);
+  }
+  function stopPoll() { clearInterval(pollTimer); pollTimer = null; }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") return;
+    if (accessToken && Date.now() > tokenExpiry) { endSession("Your sign-in has timed out. Please sign in again."); return; }
+    if (accessToken && !uploading) refresh(true);
+  });
+
+  /* ---------- open on phone (QR) ---------- */
+  $("phoneBtn").addEventListener("click", () => {
+    const url = pageUrl();
+    const box = $("qr");
+    box.innerHTML = "";
+    if (window.QRCode) {
+      new QRCode(box, { text: url, width: 200, height: 200, colorDark: "#000000", colorLight: "#ffffff" });
+      box.hidden = false;
+    } else {
+      box.hidden = true;
+    }
+    $("qrUrl").textContent = url;
+    const d = $("qrDialog");
+    if (d.showModal) d.showModal(); else d.setAttribute("open", "");
+  });
+  $("closeQr").addEventListener("click", () => { const d = $("qrDialog"); if (d.close) d.close(); else d.removeAttribute("open"); });
+  $("copyUrl").addEventListener("click", async () => { toast((await copyText(pageUrl())) ? "Page link copied." : "Couldn't copy the link."); });
+
+  /* ---------- go ---------- */
+  if (location.protocol === "file:") {
+    show("signedOut");
+    $("signedOutMsg").textContent = "This page has to be opened from its GitHub Pages address (https://…github.io/…), not as a file on your computer. Google sign-in won't work otherwise.";
+    $("signInBtn").hidden = true;
+  } else {
+    start();
+  }
+})();
+</script>
+</body>
+</html>
